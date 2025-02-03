@@ -1,0 +1,37 @@
+# Playbook for Jenkin Master Setup
+---
+- hosts: jenkins-master
+  become: true
+  tasks:
+  - name: Add the Jenkin Key
+    ansible.builtin.apt_key:
+      url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+      state: present
+  - name: Add Jenkin Repo
+    ansible.builtin.apt_repository:
+      repo: 'deb https://pkg.jenkins.io/debian-stable binary/'
+      state: present
+  - name: Install Java
+    apt:
+      name: openjdk-11-jre
+      state: present
+  - name: Install jenkins
+    apt:
+      name: jenkins
+      state: present
+  - name: Start the Jenkins Srvc
+    service:
+      name: jenkins
+      state: started
+  - name: Enable the Jenkins Srvc
+    service:
+      name: jenkins 
+      enabled: yes
+  - name: Cat the initial password of Jenkins
+    ansible.builtin.shell: cat /var/lib/jenkins/secrets/initialAdminPassword
+    register: initial_admin_password
+  - name: Display the admin password saved in initial_admin_password
+    debug:
+      var: initial_admin_password
+   
+   

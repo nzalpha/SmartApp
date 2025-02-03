@@ -1,6 +1,7 @@
 # Local .terraform directories
 **/.terraform/*
 id_rsa*
+creds.json
 # .tfstate files
 *.tfstate
 *.tfstate.*
