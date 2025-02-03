@@ -96,6 +96,14 @@ provisioner "file" {
   destination = each.key == "ansible" ? "/home/${var.vm_user}/ansible.sh" : "/home/${var.vm_user}/other.sh" 
 }
 
+provisioner "file" {
+  # If ansible execuste ansible.sh, else exe other.sh
+  source = "${path.module}/id_rsa"
+  #copy the pvt file in the vm home directory
+  destination = "/home/${var.vm_user}/ssh-key"
+}
+
+
 # We have copied the ansible script and now we need to execute it.
 
 provisioner "remote-exec" {
