@@ -38,6 +38,8 @@ variable "instances" {
             instance_type= "e2-medium"
             zone = "us-central1-a"
         }
+
+        
     }
 }
 
