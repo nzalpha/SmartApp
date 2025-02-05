@@ -41,3 +41,10 @@
     ansible.builtin.apt:
       name: docker.io
       state: present
+
+      # We need to add user zain to docker group
+  - name: Add the user 'zain' to docker's groups
+    ansible.builtin.user:
+      name: zain
+      groups: docker
+      append: yes
