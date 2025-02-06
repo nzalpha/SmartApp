@@ -39,6 +39,11 @@ variable "instances" {
             zone = "us-central1-a"
         }
 
+        "docker" = {
+            instance_type= "e2-medium"
+            zone = "us-east1-b"
+        }
+
         
     }
 }
