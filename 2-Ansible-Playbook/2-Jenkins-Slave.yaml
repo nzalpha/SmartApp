@@ -48,3 +48,9 @@
       name: zain
       groups: docker
       append: yes
+     # Set full permission on this folder, else I was getting error while doing docker images and had to do sudo docker images
+  - name: Set permission on /var/run/docker.sock
+    ansible.builtin.file:
+      path: /var/run/docker.sock
+      mode: '0777'
+
