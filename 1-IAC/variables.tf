@@ -32,7 +32,8 @@ variable "instances" {
         "jenkins-slave" = {
             instance_type= "e2-medium"
             zone = "us-central1-a"
-        }
+        }	
+
 
         "ansible" = {
             instance_type= "e2-medium"

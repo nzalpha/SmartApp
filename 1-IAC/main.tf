@@ -12,6 +12,14 @@ resource "google_compute_subnetwork" "tf-subnet" {
     ip_cidr_range = var.cidr
 }
 
+resource "google_compute_subnetwork" "docker-subnet" {
+    name = "${var.vpc_name}-docker-subnet"
+    network = google_compute_network.tf-vpc.name
+    region = "us-east1"
+    ip_cidr_range = "10.5.0.0/16"
+}
+
+
 # Creating Firewall for the VPC
 resource "google_compute_firewall" "tf-allow-ports" {
   name = var.firewall_name
@@ -67,8 +75,8 @@ resource "google_compute_instance" "tf-vm-instances" {
     access_config {
       network_tier = "PREMIUM"
     }
-    subnetwork = google_compute_subnetwork.tf-subnet.name
-    network = google_compute_network.tf-vpc.name
+  network = google_compute_network.tf-vpc.name
+  subnetwork = each.key == "docker"? google_compute_subnetwork.docker-subnet.name : google_compute_subnetwork.tf-subnet.name
   }
 
  # Connection block to help us connect to vm via ssh
