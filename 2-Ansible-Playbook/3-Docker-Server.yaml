@@ -1,0 +1,116 @@
+# This playbook performs the following tasks:
+# 1. Updates the apt package cache.
+# 2. Installs Docker on the target machine.
+# 3. Adds a specified Linux user to the Docker group to allow running Docker without sudo.
+# 4. Sets appropriate permissions on the Docker socket for all users.
+# 5. Creates a new user (defined as 'docker_user'), sets a password, and configures SSH for password authentication.
+# 6. Grants the new user sudo privileges by adding them to the sudoers file.
+# 7. Restarts the SSH service to apply configuration changes.
+
+
+---
+
+- hosts: docker-server
+  become: true
+  tasks:
+  - name: updating the repo 
+    apt:
+      update_cache: true
+      cache_valid_time: 3000
+  - name: install java for slave
+    apt:
+      name: openjdk-17-jre
+      state: present
+  - name: Create a home directory for jenkins in slave
+    file:
+      path: /home/zain/jenkins
+      state: directory
+      mode: '0755'
+      owner: zain
+      group: zain
+  - name: Download java for maven
+    ansible.builtin.get_url:
+      url: https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/GPL/openjdk-17.0.2_linux-x64_bin.tar.gz
+      dest: /opt/
+  - name: Extracting the java
+    ansible.builtin.unarchive:
+      src: /opt/openjdk-17.0.2_linux-x64_bin.tar.gz
+      dest: /opt
+      remote_src: yes
+  - name: Download Maven Package
+    ansible.builtin.get_url:
+      url: https://dlcdn.apache.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz
+      dest: /opt/
+  - name: Extract Maven Package
+    ansible.builtin.unarchive:
+      src: /opt/apache-maven-3.8.8-bin.tar.gz
+      dest: /opt
+      remote_src: yes
+      #Install Docker
+  - name: Install Docker
+    ansible.builtin.apt:
+      name: docker.io
+      state: present
+
+      # We need to add user zain to docker group
+  - name: Add the user 'zain' to docker's groups
+    ansible.builtin.user:
+      name: zain
+      groups: docker
+      append: yes
+     # Set full permission on this folder, else I was getting error while doing docker images and had to do sudo docker images
+  - name: Set permission on /var/run/docker.sock
+    ansible.builtin.file:
+      path: /var/run/docker.sock
+      mode: '0777'
+    # 5. Create a new user ('ali'), who will be the docker_user, with a home directory and bash shell.
+  - name: Create user 'ali' 
+    ansible.builtin.user:
+      name: ali  # Define the username from the docker_user variable
+      createhome: yes  # Create a home directory for the user
+      shell: /bin/bash  # Set the user's default shell to bash
+      system: no  # Create a regular user, not a system user
+      state: present  # Ensure the user is present on the system
+
+    # 6. Set the password for the newly created docker_user using a hashed password from the secret_vars.yaml file.
+  - name: Set the password for user 'ali'
+    ansible.builtin.user:
+        name: ali  # Define the username from the docker_user variable
+        password: "{{ 'GCP@2024' | password_hash('sha512') }}"  # Use the hashed password from the secret_vars.yaml file
+
+    # 7. Enable password-based authentication for SSH connections to allow login with a password.
+  - name: Enable password authentication in SSH
+    ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config  # Path to the SSH configuration file
+        regexp: '^#?PasswordAuthentication'  # Regular expression to find and modify the PasswordAuthentication line
+        line: 'PasswordAuthentication yes'  # Set password authentication to 'yes'
+        backup: yes  # Create a backup of the SSH configuration file before making changes
+
+    # 10. Comment out the 'Include /etc/ssh/sshd_config.d/*.conf' line in the SSH configuration file
+  - name: Comment out 'Include /etc/ssh/sshd_config.d/*.conf'
+    ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config  # Path to the SSH configuration file
+        regexp: '^Include /etc/ssh/sshd_config.d/\*.conf'  # Regular expression to match the Include line
+        line: '#Include /etc/ssh/sshd_config.d/*.conf'  # Comment out the Include line
+        backup: yes  # Create a backup of the SSH configuration file before making changes
+
+    # 8. Restart the SSH service to apply the changes made to the configuration file.
+  - name: Restart SSH service
+    ansible.builtin.service:
+        name: ssh  # The SSH service
+        state: restarted  # Restart the service to apply the new configuration
+
+    # 9. Add the newly created docker_user (maha) to the sudoers file, granting them sudo privileges.
+  - name: Add 'ali' to the sudoers file
+    ansible.builtin.lineinfile:
+        path: /etc/sudoers  # Path to the sudoers file
+        insertafter: EOF  # Insert the new line at the end of the file
+        line: 'ali ALL=(ALL:ALL) ALL'  # Grant full sudo privileges to the user
+        validate: 'visudo -cf %s'  # Validate the sudoers file for syntax correctness using visudo
+    # 10. Comment out the 'Include /etc/ssh/sshd_config.d/*.conf' line in the SSH configuration file
+  - name: Comment out 'Include /etc/ssh/sshd_config.d/*.conf'
+    ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config  # Path to the SSH configuration file
+        regexp: '^Include /etc/ssh/sshd_config.d/\*.conf'  # Regular expression to match the Include line
+        line: '#Include /etc/ssh/sshd_config.d/*.conf'  # Comment out the Include line
+        backup: yes  # Create a backup of the SSH configuration file before making changes
