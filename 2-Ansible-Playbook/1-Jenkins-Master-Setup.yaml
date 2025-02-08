@@ -13,7 +13,7 @@
       state: present
   - name: Install Java
     apt:
-      name: openjdk-11-jre
+      name: openjdk-17-jre
       state: present
   - name: Install jenkins
     apt:
