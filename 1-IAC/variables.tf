@@ -53,3 +53,8 @@ variable "vm_user"{
     default = "zain"
 }
   
+variable "database_password" {
+    type = string
+    sensitive = true
+  
+}
